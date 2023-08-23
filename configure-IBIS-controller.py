@@ -1,2 +1,2 @@
-from modules.transform_to_send_zM import transform_to_send_zM
 from modules.romanize_ukrainian import romanize_ukrainian
+from modules.generate_zM_sending_code import generate_zM_sending_code
