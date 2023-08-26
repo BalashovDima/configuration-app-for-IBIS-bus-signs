@@ -67,6 +67,10 @@ class Inputs(ctk.CTkFrame):
         self.sing_input_length_var = ctk.IntVar(value=len(self.sign_input_var.get()))
         self.lcd_input_length_var = ctk.IntVar(value=len(self.lcd_input_var.get()))
 
+        # update length
+        self.sign_input_var.trace_add('write', lambda *args: self.update_sign_length_label(self, *args))
+        self.lcd_input_var.trace_add('write', lambda *args: self.update_lcd_length_label(self, *args))
+
         # grid configuration
         self.rowconfigure((0,2), weight=7, uniform='a')
         self.rowconfigure(1, weight=1, uniform='a')
@@ -97,6 +101,12 @@ class Inputs(ctk.CTkFrame):
         self.lcd_input_length.pack(side='left')
         self.sign_inputs_frame.grid(row=0, column=1, sticky='nesw')
         self.lcd_inputs_frame.grid(row=2, column=1, sticky='nesw')
+
+    def update_sign_length_label(self, *args):
+        self.sing_input_length_var.set(len(self.sign_input_var.get()))
+        
+    def update_lcd_length_label(self, *args):
+        self.lcd_input_length_var.set(len(self.lcd_input_var.get()))
 
 
 class Hide_remove(ctk.CTkFrame):
