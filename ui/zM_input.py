@@ -2,13 +2,16 @@ import customtkinter as ctk
 from PIL import Image
 
 class zM_input(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, data, index):
         super().__init__(parent, 
                          fg_color='#4d4d4d',
-                         corner_radius=15,)
+                         corner_radius=15)
+        
+        self.data = data
+        self.index = index
 
-        self.order_frame = Order_frame(self, 1)
-        self.inputs_frame = Inputs(self)
+        self.order_frame = Order_frame(self, self.index)
+        self.inputs_frame = Inputs(self, self.data)
         self.hide_remove = Hide_remove(self)
 
         self.order_frame.pack(side='left', pady=10, padx=10)
@@ -42,7 +45,7 @@ class Order_frame(ctk.CTkFrame):
                                          fg_color='transparent', 
                                          corner_radius=5)
         self.number_widget = ctk.CTkLabel(self,
-                                   text=self.number,
+                                   text=self.number+1,
                                    width=30,
                                    height=30,
                                    font=('Calibri', 24),
@@ -53,8 +56,16 @@ class Order_frame(ctk.CTkFrame):
         self.down_button.pack()
 
 class Inputs(ctk.CTkFrame):
-    def __init__(self, parent):
+    def __init__(self, parent, data):
         super().__init__(parent, fg_color='transparent')
+
+        self.data = data
+
+        # tk variables
+        self.sign_input_var = ctk.StringVar(value=data['sign'])
+        self.lcd_input_var = ctk.StringVar(value=data['lcd'])
+        self.sing_input_length_var = ctk.IntVar(value=len(self.sign_input_var.get()))
+        self.lcd_input_length_var = ctk.IntVar(value=len(self.lcd_input_var.get()))
 
         # grid configuration
         self.rowconfigure((0,2), weight=7, uniform='a')
@@ -73,14 +84,14 @@ class Inputs(ctk.CTkFrame):
         self.sign_inputs_frame = ctk.CTkFrame(self, fg_color='transparent')
         self.lcd_inputs_frame = ctk.CTkFrame(self, fg_color='transparent')
         
-        self.sign_input = ctk.CTkEntry(self.sign_inputs_frame, font=('Regular', 14))
-        self.lcd_input = ctk.CTkEntry(self.lcd_inputs_frame, font=('Regular', 14))
+        self.sign_input = ctk.CTkEntry(self.sign_inputs_frame, font=('Regular', 14), textvariable=self.sign_input_var)
+        self.lcd_input = ctk.CTkEntry(self.lcd_inputs_frame, font=('Regular', 14), textvariable=self.lcd_input_var)
 
         self.sign_input.pack(side='left', expand=True, fill='both')
         self.lcd_input.pack(side='left',fill='both')
         
-        self.sign_input_length = ctk.CTkLabel(self.sign_inputs_frame, text='128')
-        self.lcd_input_length = ctk.CTkLabel(self.lcd_inputs_frame, text='12')
+        self.sign_input_length = ctk.CTkLabel(self.sign_inputs_frame, textvariable = self.sing_input_length_var)
+        self.lcd_input_length = ctk.CTkLabel(self.lcd_inputs_frame, textvariable = self.lcd_input_length_var)
 
         self.sign_input_length.pack(side='left')
         self.lcd_input_length.pack(side='left')
