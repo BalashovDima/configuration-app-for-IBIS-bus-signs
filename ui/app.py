@@ -43,6 +43,35 @@ class App(ctk.CTk):
 
             self.zM_inputs_list.append(zM_input_frame)
 
+        self.render_new_zM_button()
+        
+
+    def render_new_zM_button(self):
+        self.new_zM_button = ctk.CTkButton(self.zM_frame, 
+                                           text='+', 
+                                           font=('Regular', 25, 'bold'),
+                                           width=50,
+                                           height=50,
+                                           command=self.add_zM_input)
+        self.new_zM_button.pack(side='right', padx=20, pady=20)
+
+    def add_zM_input(self):
+        self.new_zM_button.destroy()
+
+        data = {
+            "sign": "",
+            "lcd": "",
+            "inactive": False
+        }
+        
+        zM_input_frame = zM_input(self.zM_frame, data, len(self.zM_inputs_list))
+        zM_input_frame.pack(fill='x', padx=10, pady=5)
+
+        self.zM_inputs_list.append(zM_input_frame)
+        self.data['zM_texts'].append(data)
+
+        self.render_new_zM_button()
+
     def save_data_file(self, event):
         self.data_file = self.bottom_bar.data_file_frame.data_file_path_var.get()
 
