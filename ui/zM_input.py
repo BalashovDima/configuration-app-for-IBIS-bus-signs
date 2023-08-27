@@ -2,28 +2,34 @@ import customtkinter as ctk
 from PIL import Image
 
 class zM_input(ctk.CTkFrame):
-    def __init__(self, parent, data, index):
+    def __init__(self, parent, data, index, remove_self_callback):
         super().__init__(parent, 
                          fg_color='#4d4d4d',
                          corner_radius=15)
         
         self.data = data
         self.index = index
+        self.remove_self_callback = remove_self_callback
 
         self.order_frame = Order_frame(self, self.index)
         self.inputs_frame = Inputs(self, self.data)
         self.hide_remove = Hide_remove(self)
 
+        self.hide_remove.remove_button.bind('<Button-1>', self.remove_self)
+
         self.order_frame.pack(side='left', pady=10, padx=10)
         self.inputs_frame.pack(side='left', pady=10, expand=True, fill='both')
         self.hide_remove.pack(side='left', pady=10, padx=10, ipadx=3, ipady=3)
 
+    def remove_self(self, event):
+        self.remove_self_callback(int(self.order_frame.number.get())-1)
+        self.destroy()
 
 class Order_frame(ctk.CTkFrame):
     def __init__(self, parent, number):
         super().__init__(parent, fg_color='transparent')
 
-        self.number = number
+        self.number = ctk.StringVar(value=number+1)
 
         up_icon_light = Image.open('icons/up-light.png')
         down_icon_light = Image.open('icons/down-light.png')
@@ -45,7 +51,7 @@ class Order_frame(ctk.CTkFrame):
                                          fg_color='transparent', 
                                          corner_radius=5)
         self.number_widget = ctk.CTkLabel(self,
-                                   text=self.number+1,
+                                   textvariable=self.number,
                                    width=30,
                                    height=30,
                                    font=('Calibri', 24),
