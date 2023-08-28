@@ -3,6 +3,7 @@ from threading import Timer
 import customtkinter as ctk
 from .zM_input import zM_input
 from .bottom_bar import Bottom_bar
+from modules.modify_arduino_file import modify_arduino_file
 
 class App(ctk.CTk):
     def __init__(self):
@@ -19,6 +20,7 @@ class App(ctk.CTk):
 
         self.bottom_bar.data_file_frame.explore_button.bind('<Button-1>', self.rerender_zM, add='+')
         self.bottom_bar.data_file_frame.save_button.bind('<Button-1>', self.save_data_file, add='+')
+        self.bottom_bar.arduino_file_frame.modify_button.bind('<Button-1>', self.modify_arduino_file, add='+')
       
 
         self.zM_frame.pack(fill='both', expand=True)
@@ -103,3 +105,8 @@ class App(ctk.CTk):
         notification_text.pack()
         notification.place(relx=0.5, y=30, anchor='center')
         Timer(2.0, remove_notification, args=(notification,)).start()
+
+    def modify_arduino_file(self, event):
+        self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
+
+        modify_arduino_file(self.arduino_file, self.data)
