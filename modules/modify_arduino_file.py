@@ -42,6 +42,8 @@ def modify_arduino_file(file_path, data):
             file.writelines(lines)
 
         print(f'File {file_path} was successfully updated')
+
+        return "success"
     else:
         print("Couldn't locate marker comments. \n")
         print('number_of_texts_line_index: ', number_of_texts_line_index)

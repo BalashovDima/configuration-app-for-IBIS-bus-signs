@@ -85,7 +85,10 @@ class App(ctk.CTk):
     def modify_arduino_file(self, event):
         self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
 
-        modify_arduino_file(self.arduino_file, self.data)
+        if modify_arduino_file(self.arduino_file, self.data) == 'success':
+            self.notification("Successfully modified")
+        else:
+            self.notification("Couldn't modify")
 
     def notification(self, message):
         def remove_notification(notification):
