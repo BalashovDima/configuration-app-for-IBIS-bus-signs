@@ -80,20 +80,23 @@ class App(ctk.CTk):
         with open(self.data_file, 'w',  encoding='utf-8') as file:
             json.dump(self.data, file, indent=4, ensure_ascii=False)
 
+        self.notification('Saved')
+
+    def modify_arduino_file(self, event):
+        self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
+
+        modify_arduino_file(self.arduino_file, self.data)
+
+    def notification(self, message):
         def remove_notification(notification):
             notification.destroy()
 
         notification = ctk.CTkFrame(self)
         notification_text = ctk.CTkLabel(notification, 
-                                         text='Saved', 
+                                         text=message, 
                                          font=('Regular', 18),
                                          padx=20,
                                          pady=5)
         notification_text.pack()
         notification.place(relx=0.5, y=30, anchor='center')
         Timer(2.0, remove_notification, args=(notification,)).start()
-
-    def modify_arduino_file(self, event):
-        self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
-
-        modify_arduino_file(self.arduino_file, self.data)
