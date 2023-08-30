@@ -2,17 +2,20 @@ import customtkinter as ctk
 from PIL import Image
 
 class zM_input(ctk.CTkFrame):
-    def __init__(self, parent, data, index, remove_self_callback):
+    def __init__(self, parent, data, zM_inputs_list, new=False):
         super().__init__(parent, 
                          fg_color='#4d4d4d',
                          corner_radius=15)
         
         self.data = data
-        self.index = index
-        self.remove_self_callback = remove_self_callback
+        self.zM_inputs_list = zM_inputs_list
 
-        self.order_frame = Order_frame(self, self.index)
-        self.inputs_frame = Inputs(self, self.data)
+        self.index = len(zM_inputs_list)
+        if new:
+            self.inputs_frame = Inputs(self, {"sign":"","lcd":"","inactive":False})
+        else:
+            self.inputs_frame = Inputs(self, self.data['zM_texts'][self.index])
+        self.order_frame = Order_frame(self, self.index, self.data, self.zM_inputs_list)
         self.hide_remove = Hide_remove(self)
 
         self.hide_remove.remove_button.bind('<Button-1>', self.remove_self)
@@ -22,14 +25,20 @@ class zM_input(ctk.CTkFrame):
         self.hide_remove.pack(side='left', pady=10, padx=10, ipadx=3, ipady=3)
 
     def remove_self(self, event):
-        self.remove_self_callback(int(self.order_frame.number.get())-1)
+        self.zM_inputs_list.pop(self.index)
+        self.data['zM_texts'].pop(self.index)
+            
+        for i in range(self.index, len(self.zM_inputs_list)):
+            self.zM_inputs_list[i].order_frame.number.set(f'{i+1}')
+            self.zM_inputs_list[i].index = i
+
         self.destroy()
 
 class Order_frame(ctk.CTkFrame):
-    def __init__(self, parent, number):
+    def __init__(self, parent, index):
         super().__init__(parent, fg_color='transparent')
 
-        self.number = ctk.StringVar(value=number+1)
+        self.number = ctk.StringVar(value=index+1)
 
         up_icon_light = Image.open('icons/up-light.png')
         down_icon_light = Image.open('icons/down-light.png')
