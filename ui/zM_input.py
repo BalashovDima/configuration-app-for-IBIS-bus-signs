@@ -19,6 +19,8 @@ class zM_input(ctk.CTkFrame):
         self.hide_remove = Hide_remove(self)
 
         self.hide_remove.remove_button.bind('<Button-1>', self.remove_self)
+        self.order_frame.up_button.bind('<Button-1>', self.move_up)
+        self.order_frame.down_button.bind('<Button-1>', self.move_down)
 
         self.order_frame.pack(side='left', pady=10, padx=10)
         self.inputs_frame.pack(side='left', pady=10, expand=True, fill='both')
@@ -33,6 +35,32 @@ class zM_input(ctk.CTkFrame):
             self.zM_inputs_list[i].index = i
 
         self.destroy()
+
+    def move_up(self, event):
+        if self.index == 0: return
+
+        a = self.index
+        b = self.index-1
+        
+        self.swap_zMs(a, b)
+
+    def move_down(self, event):
+        if self.index == len(self.zM_inputs_list)-1: return
+        
+        a = self.index
+        b = self.index+1
+
+        self.swap_zMs(a, b)
+
+    def swap_zMs(self, a, b):
+        temp_sign_text = self.zM_inputs_list[a].inputs_frame.sign_input_var.get()
+        temp_lcd_text = self.zM_inputs_list[a].inputs_frame.lcd_input_var.get()
+
+        self.zM_inputs_list[a].inputs_frame.sign_input_var.set(self.zM_inputs_list[b].inputs_frame.sign_input_var.get())
+        self.zM_inputs_list[a].inputs_frame.lcd_input_var.set(self.zM_inputs_list[b].inputs_frame.lcd_input_var.get())
+
+        self.zM_inputs_list[b].inputs_frame.sign_input_var.set(temp_sign_text)
+        self.zM_inputs_list[b].inputs_frame.lcd_input_var.set(temp_lcd_text)
 
 class Order_frame(ctk.CTkFrame):
     def __init__(self, parent, index):
