@@ -4,6 +4,7 @@ import customtkinter as ctk
 from .zM_input import zM_input
 from .bottom_bar import Bottom_bar
 from modules.modify_arduino_file import modify_arduino_file
+from .upload_window import Upload_window
 
 class App(ctk.CTk):
     def __init__(self):
@@ -17,10 +18,12 @@ class App(ctk.CTk):
 
         self.zM_frame = ctk.CTkScrollableFrame(self)
         self.bottom_bar = Bottom_bar(self)
+        self.upload_window = None
 
         self.bottom_bar.data_file_frame.explore_button.bind('<Button-1>', self.rerender_zM, add='+')
         self.bottom_bar.data_file_frame.save_button.bind('<Button-1>', self.save_data_file, add='+')
         self.bottom_bar.arduino_file_frame.modify_button.bind('<Button-1>', self.modify_arduino_file, add='+')
+        self.bottom_bar.arduino_file_frame.upload_button.bind('<Button-1>', self.upload_to_arduino, add='+')
       
 
         self.zM_frame.pack(fill='both', expand=True)
@@ -89,6 +92,19 @@ class App(ctk.CTk):
             self.notification("Successfully modified")
         else:
             self.notification("Couldn't modify")
+
+    def upload_to_arduino(self, event):
+        self.data_file = self.bottom_bar.data_file_frame.data_file_path_var.get()
+        self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
+        if self.arduino_file == '' or self.data_file == '': 
+            self.notification('Choose files')
+            return
+        
+        if self.upload_window is None or not self.upload_window.winfo_exists():
+            self.upload_window = Upload_window(self, self.data, self.arduino_file)  # create window if its None or destroyed
+            Timer(0.1, lambda:self.upload_window.focus()).start()
+        else:
+            self.upload_window.focus()  # if window exists focus it
 
     def notification(self, message):
         def remove_notification(notification):

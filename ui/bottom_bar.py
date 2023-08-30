@@ -97,7 +97,7 @@ class Arduino_file_frame(ctk.CTkFrame):
                                             width=40)
         
         self.modify_button = ctk.CTkButton(self.buttons_frame, text='Modify', width=35)
-        self.flash_button = ctk.CTkButton(self.buttons_frame, text='Flash', width=35)
+        self.upload_button = ctk.CTkButton(self.buttons_frame, text='Upload', width=35)
 
         # layout
         self.columnconfigure(1, weight=2, uniform='a')
@@ -108,7 +108,7 @@ class Arduino_file_frame(ctk.CTkFrame):
         self.label.pack(side='left', padx = 5)
         self.path_entry.pack(side='left', expand=True, fill='both')
 
-        self.flash_button.pack(side='right', padx=0)
+        self.upload_button.pack(side='right', padx=0)
         self.modify_button.pack(side='right', padx=5)
         self.explore_button.pack(side='right', padx=0)     
 
