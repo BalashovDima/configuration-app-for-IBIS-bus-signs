@@ -39,8 +39,8 @@ class App(ctk.CTk):
         with open(self.data_file, 'r',  encoding='utf-8') as file:
             self.data = json.load(file)
 
-        for index, item in enumerate(self.data['zM_texts']):
-            zM_input_frame = zM_input(self.zM_frame, item, index, self.remove_zM_input)
+        for i in self.data['zM_texts']:
+            zM_input_frame = zM_input(self.zM_frame, self.data, self.zM_inputs_list)
             zM_input_frame.pack(fill='x', padx=10, pady=5)
 
             self.zM_inputs_list.append(zM_input_frame)
@@ -60,26 +60,13 @@ class App(ctk.CTk):
     def add_zM_input(self):
         self.new_zM_button.destroy()
 
-        data = {
-            "sign": "",
-            "lcd": "",
-            "inactive": False
-        }
-        
-        zM_input_frame = zM_input(self.zM_frame, data, len(self.zM_inputs_list), self.remove_zM_input)
+        zM_input_frame = zM_input(self.zM_frame, self.data, self.zM_inputs_list, new=True)
         zM_input_frame.pack(fill='x', padx=10, pady=5)
 
         self.zM_inputs_list.append(zM_input_frame)
-        self.data['zM_texts'].append(data)
+        self.data['zM_texts'].append({"sign":"","lcd":"","inactive":False})
 
         self.render_new_zM_button()
-
-    def remove_zM_input(self, index):
-        self.zM_inputs_list.pop(index)
-        self.data['zM_texts'].pop(index)
-            
-        for i in range(index, len(self.zM_inputs_list)):
-            self.zM_inputs_list[i].order_frame.number.set(f'{i+1}')
 
     def save_data_file(self, event):
         self.data_file = self.bottom_bar.data_file_frame.data_file_path_var.get()
