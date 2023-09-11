@@ -82,10 +82,13 @@ class App(ctk.CTk):
 
         with open(self.data_file, 'w',  encoding='utf-8') as file:
             json.dump(self.data, file, indent=4, ensure_ascii=False)
+            print("saved")
 
         self.notification('Saved')
 
     def modify_arduino_file(self, event):
+        self.save_data_file({})
+        
         self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
 
         if modify_arduino_file(self.arduino_file, self.data) == 'success':
@@ -94,6 +97,8 @@ class App(ctk.CTk):
             self.notification("Couldn't modify")
 
     def upload_to_arduino(self, event):
+        self.save_data_file({})
+
         self.data_file = self.bottom_bar.data_file_frame.data_file_path_var.get()
         self.arduino_file = self.bottom_bar.arduino_file_frame.data_file_path_var.get()
         if self.arduino_file == '' or self.data_file == '': 
