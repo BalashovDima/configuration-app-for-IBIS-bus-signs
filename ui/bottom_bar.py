@@ -112,7 +112,7 @@ class Arduino_file_frame(ctk.CTkFrame):
         self.modify_button.pack(side='right', padx=5)
         self.explore_button.pack(side='right', padx=0)
 
-        self.data_file_path_var.set(os.path.dirname(os.path.dirname(__file__))+'\\arduino-script\\IBIS-bus-signs.ino')     
+        self.data_file_path_var.set(os.path.dirname(os.path.dirname(__file__))+'\\arduino-script\\IBIS-bus-signs\\IBIS-bus-signs.ino')     
 
     def browse_files(self):
         self.filename = filedialog.askopenfilename(initialdir = os.path.dirname(__file__)+'/../arduino-script/',
