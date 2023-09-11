@@ -1,1 +1,1 @@
-pyinstaller --noconfirm --onedir --windowed --add-data "icons/*.png;icons" "configure-IBIS-controller.py"
+pyinstaller -w --noconfirm --onedir --windowed --add-data "icons/*.png;icons" --add-data "config-data-files/*.json;config-data-files" --add-data "arduino-script/*.ino;arduino-script" "configure-IBIS-controller.py"

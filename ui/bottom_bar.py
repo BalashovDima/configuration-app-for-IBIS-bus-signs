@@ -59,7 +59,7 @@ class Data_file_frame(ctk.CTkFrame):
         self.explore_button.pack(side='right', padx=5)     
 
     def browse_files(self):
-        self.filename = filedialog.askopenfilename(initialdir = os.path.dirname(__file__)+'/../',
+        self.filename = filedialog.askopenfilename(initialdir = os.path.dirname(__file__)+'/../config-data-files/',
                                                    title = "Select a File",
                                                    filetypes = (("json files","*.json*"),("all files", "*.*")))
 
@@ -110,10 +110,12 @@ class Arduino_file_frame(ctk.CTkFrame):
 
         self.upload_button.pack(side='right', padx=0)
         self.modify_button.pack(side='right', padx=5)
-        self.explore_button.pack(side='right', padx=0)     
+        self.explore_button.pack(side='right', padx=0)
+
+        self.data_file_path_var.set(os.path.dirname(os.path.dirname(__file__))+'\\arduino-script\\IBIS-bus-signs.ino')     
 
     def browse_files(self):
-        self.filename = filedialog.askopenfilename(initialdir = os.path.dirname(__file__)+'/../',
+        self.filename = filedialog.askopenfilename(initialdir = os.path.dirname(__file__)+'/../arduino-script/',
                                                    title = "Select a File",
                                                    filetypes = (("arduino files","*.ino*"),("all files", "*.*")))
 
