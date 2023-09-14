@@ -1,6 +1,9 @@
 import re
+import threading
+import time
 import customtkinter as ctk
 from modules.modify_n_upload import modify_n_upload
+from modules.is_arduino_library_installed import check_arduino_library
 
 class Upload_window(ctk.CTkToplevel):
     def __init__(self, parent, data, arduino_file):
@@ -13,6 +16,16 @@ class Upload_window(ctk.CTkToplevel):
         self.data = data
         self.arduino_file = arduino_file
         self.fqbn = 'arduino:avr:nano:cpu=atmega328'
+
+        self.lib_list = {'LiquidCrystal': '1.0.7', 
+                         'RTClib': '2.1.1', 
+                         'Adafruit BusIO': '1.14.1', 
+                         'Wire': '1.0', 
+                         'AnalogKey': '1.1', 
+                         'EncButton': '2.0', 
+                         'EEPROM': '2.0', 
+                         'SPI': '1.0',
+                         }
 
         # variables
         self.board_var = ctk.StringVar()
@@ -83,6 +96,38 @@ class Upload_window(ctk.CTkToplevel):
         
         self.output.delete(0.0, ctk.END)
         self.upload_button.configure(state="disabled")
+
+        # check libraries
+        thread = threading.Thread(target=lambda: setattr(thread, 'result', check_arduino_library(self.lib_list)))
+        thread.start()
+        counter = 0
+        while not hasattr(thread, 'result'):
+            print(".", end="", flush=True)
+            text = ''
+            if counter == 0:
+                text = '⦿'
+            elif counter == 1:
+                text = '⦿⦿'
+            elif counter == 2:
+                text = '⦿⦿⦿'
+            counter = (counter + 1) % 3
+            self.inprogress_var.set(text)
+            self.update()
+            time.sleep(0.3)
+        self.inprogress_var.set('')
+        thread.join()
+        stop_upload = False
+        for lib in thread.result:
+            if not lib.installed:
+                self.output.insert(ctk.END, f'ERROR: Library \'{lib.name}\' is not installed, cannot compile.\n')
+                stop_upload = True
+            elif lib.version != self.lib_list[lib.name]:
+                self.output.insert(ctk.END, f'WARNING: \'{lib.name}\' version is recommended to be @{self.lib_list[lib.name]} (currently it is @{lib.version}). Sketch might not compile if the version are not compatible\n')
+                stop_upload = True
+
+        if stop_upload: 
+            self.upload_button.configure(state="enabled")
+            return
 
         # upload and save the output, then show the output
         uploading_output = modify_n_upload(file_path=self.arduino_file, data=self.data, com=com, fqbn=self.fqbn, inprogress_label_var = self.inprogress_var, window=self)
