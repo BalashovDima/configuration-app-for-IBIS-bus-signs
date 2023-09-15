@@ -1,6 +1,8 @@
 import re
 import threading
-import time
+from threading import Timer
+import datetime
+import subprocess
 import customtkinter as ctk
 from modules.modify_n_upload import modify_n_upload
 from modules.is_arduino_library_installed import check_arduino_library
@@ -16,6 +18,9 @@ class Upload_window(ctk.CTkToplevel):
         self.data = data
         self.arduino_file = arduino_file
         self.fqbn = 'arduino:avr:nano:cpu=atmega328'
+        self.com = ''
+        self.loading_animetion_prevtime = datetime.datetime.now()
+        self.loading_count = 1
 
         self.lib_list = {'LiquidCrystal': '1.0.7', 
                          'RTClib': '2.1.1', 
@@ -29,8 +34,7 @@ class Upload_window(ctk.CTkToplevel):
 
         # variables
         self.board_var = ctk.StringVar()
-        self.com_var = ctk.StringVar(value='COM')
-        self.output_var = ctk.StringVar(value=' ')
+        self.com_var = ctk.StringVar(value='')
 
         # board
         self.board_frame = ctk.CTkFrame(self)
@@ -40,7 +44,8 @@ class Upload_window(ctk.CTkToplevel):
                                                       'Arduino Nano (328 old bootloader)', 
                                                       'Arduino Uno'], 
                                               variable=self.board_var,
-                                              width=200)
+                                              width=200,
+                                              state='readonly')
         self.board_var.set('Arduino Nano (328)')
         self.board_label.pack(side='left', padx=5)
         self.board_combobox.pack(side='left')
@@ -51,9 +56,9 @@ class Upload_window(ctk.CTkToplevel):
         # com port
         self.com_frame = ctk.CTkFrame(self)
         self.com_label = ctk.CTkLabel(self.com_frame, text='COM port:')
-        self.com_entry = ctk.CTkEntry(self.com_frame, textvariable=self.com_var)
+        self.com_combobox = ctk.CTkComboBox(self.com_frame, variable=self.com_var, values=(''))
         self.com_label.pack(side='left', padx=5)
-        self.com_entry.pack(side='left')
+        self.com_combobox.pack(side='left')
 
         # button
         self.upload_button = ctk.CTkButton(self, text='Upload', command=self.upload)
@@ -71,6 +76,8 @@ class Upload_window(ctk.CTkToplevel):
         self.upload_button.pack(pady=10)
         self.output.pack(expand=True, fill='both')
 
+        Timer(0.3, lambda:self.load_boards()).start()
+
     def update_fqbn(self, *args):
         if(self.board_var.get() == 'Arduino Nano (328)'):
             self.fqbn = 'arduino:avr:nano:cpu=atmega328'
@@ -79,43 +86,82 @@ class Upload_window(ctk.CTkToplevel):
         elif(self.board_var.get() == 'Arduino Uno'):
             self.fqbn = 'arduino:avr:uno'
 
-    def upload(self):
-        #get com port number using regular expression
-        pattern = re.compile(r'^com(\d)$', re.IGNORECASE)
-        match = pattern.match(self.com_var.get())
+    def get_connected_arduino_boards(self):
+        try:
+            # Run the arduino-cli board list command
+            result = subprocess.run(["arduino-cli", "board", "list"], capture_output=True, text=True, check=True)
 
-        com = None
+            # Parse the output to extract the board information
+            board_list = []
+            lines = result.stdout.splitlines()
+            for line in lines[1:]:  # Skip the header line
+                parts = line.split()
+                if len(parts) >= 3:
+                    port = parts[0]
+                    # board_type = parts[2]
+                    # board_name = " ".join(parts[3:])
+                    board_list.append(port)
+
+            return board_list
+
+        except subprocess.CalledProcessError as e:
+            print('Error running arduino-cli to load connected boards:', e)
+            self.output.insert(ctk.END, f'Error loading connected boards: {e}')
+            return []
+    
+    def load_boards(self):
+        boards_thread = threading.Thread(target=lambda: setattr(boards_thread, 'result', self.get_connected_arduino_boards()))
+        boards_thread.start()
+
+        while not hasattr(boards_thread, 'result'):
+            self.loading_animetion()
+        self.inprogress_var.set('')
+        
+        boards_thread.join()
+
+        if len(boards_thread.result):
+            self.com_combobox.configure(values=boards_thread.result)
+            self.com_var.set(boards_thread.result[0])
+
+    def com_check(self, com):
+        '''Checks whether 'com' is valid
+
+        Argument: 'com' -- string to check.
+        Returns: False if 'com' is not valid, else string in format 'COM<number>'
+        '''
+        if com.isdigit():
+            if int(com) > 19: return False
+            return f'COM{com}'
+        
+        # get com port number using regular expression
+        pattern = re.compile(r'^com(\d\d?)$', re.IGNORECASE)
+        match = pattern.match(com)
+
         if match:
             number = match.group(1)
-            com = f'COM{number.upper()}'
-        elif self.com_var.get().isdigit():
-            com = f'COM{com}'
-        else:
-            self.output_var.set('Invalid COM port')
-            return
+            if int(number) > 19: return False
+            return f'COM{number}'
         
+        return False
+
+    def upload(self):
+        com = self.com_check(self.com_var.get())
+        if not com:
+            self.output.insert(ctk.END, 'Invalid COM port')
+            return
+
         self.output.delete(0.0, ctk.END)
         self.upload_button.configure(state="disabled")
 
         # check libraries
         thread = threading.Thread(target=lambda: setattr(thread, 'result', check_arduino_library(self.lib_list)))
         thread.start()
-        counter = 0
-        while not hasattr(thread, 'result'):
-            print(".", end="", flush=True)
-            text = ''
-            if counter == 0:
-                text = '⦿'
-            elif counter == 1:
-                text = '⦿⦿'
-            elif counter == 2:
-                text = '⦿⦿⦿'
-            counter = (counter + 1) % 3
-            self.inprogress_var.set(text)
-            self.update()
-            time.sleep(0.3)
+        while not hasattr(thread, 'result'): # display animetion while libraries are being checked
+            self.loading_animetion()
         self.inprogress_var.set('')
         thread.join()
+
+        # stop upload if any of the needed libraries are not installed
         stop_upload = False
         for lib in thread.result:
             if not lib.installed:
@@ -134,3 +180,23 @@ class Upload_window(ctk.CTkToplevel):
         self.output.insert(ctk.END, ''.join(uploading_output))
 
         self.upload_button.configure(state="enabled")
+
+    def loading_animetion(self, speed=0.3):
+        time_difference = self.loading_animetion_prevtime - datetime.datetime.now()
+        if abs(time_difference.total_seconds()) < speed:
+            return
+
+        # text = ''
+        if self.loading_count == 0:
+            text = '⦿'
+        elif self.loading_count == 1:
+            text = '⦿⦿'
+        elif self.loading_count == 2:
+            text = '⦿⦿⦿'
+
+        self.loading_count = (self.loading_count + 1) % 3
+
+        self.inprogress_var.set(text)
+        self.update()
+        
+        self.loading_animetion_prevtime = datetime.datetime.now()
