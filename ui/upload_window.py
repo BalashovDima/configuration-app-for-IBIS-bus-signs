@@ -94,6 +94,19 @@ class Upload_window(ctk.CTkToplevel):
             self.output.insert(ctk.END, "✖ Arduino AVR core is NOT installed ✖\n")
             return
 
+        # check if all the libraries are installed
+        libs_check_results = check_arduino_library(self.lib_list)
+        libs_installed = True
+        for lib in libs_check_results:
+            if not lib.installed:
+                self.output.insert(ctk.END, f'✖ Library \'{lib.name}\' is not installed ✖\n')
+                libs_installed = False
+            elif lib.version != self.lib_list[lib.name]:
+                self.output.insert(ctk.END, f'warning: \'{lib.name}\' version is recommended to be @{self.lib_list[lib.name]} (currently it is @{lib.version}). Sketch might not compile if the versions are not compatible\n')
+                libs_installed = False
+        if libs_installed:
+            self.output.insert(ctk.END, "✔ All needed arduino libraries are installed ✔\n")
+            
 
     def is_arduino_cli_installed(self):
         try:
@@ -185,28 +198,6 @@ class Upload_window(ctk.CTkToplevel):
 
         self.output.delete(0.0, ctk.END)
         self.upload_button.configure(state="disabled")
-
-        # check libraries
-        thread = threading.Thread(target=lambda: setattr(thread, 'result', check_arduino_library(self.lib_list)))
-        thread.start()
-        while not hasattr(thread, 'result'): # display animetion while libraries are being checked
-            self.loading_animetion()
-        self.inprogress_var.set('')
-        thread.join()
-
-        # stop upload if any of the needed libraries are not installed
-        stop_upload = False
-        for lib in thread.result:
-            if not lib.installed:
-                self.output.insert(ctk.END, f'ERROR: Library \'{lib.name}\' is not installed, cannot compile.\n')
-                stop_upload = True
-            elif lib.version != self.lib_list[lib.name]:
-                self.output.insert(ctk.END, f'WARNING: \'{lib.name}\' version is recommended to be @{self.lib_list[lib.name]} (currently it is @{lib.version}). Sketch might not compile if the version are not compatible\n')
-                stop_upload = True
-
-        if stop_upload: 
-            self.upload_button.configure(state="enabled")
-            return
 
         # upload and save the output, then show the output
         uploading_output = modify_n_upload(file_path=self.arduino_file, data=self.data, com=com, fqbn=self.fqbn, inprogress_label_var = self.inprogress_var, window=self)
