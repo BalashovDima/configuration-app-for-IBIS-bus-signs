@@ -76,8 +76,23 @@ class Upload_window(ctk.CTkToplevel):
         self.upload_button.pack(pady=10)
         self.output.pack(expand=True, fill='both')
 
-        # Timer(0.3, lambda:self.load_boards()).start()
-        Timer(0.3, lambda:self.prerequisites_check()).start()
+        Timer(0.3, lambda:self.launch_prerequisites_check()).start()
+
+    def launch_prerequisites_check(self):
+        thread = threading.Thread(target=lambda: setattr(thread, 'prerequisites_satisfied', self.prerequisites_check()))
+        thread.start()
+        while thread.is_alive(): # display animetion while prerequisites are being checked
+            self.loading_animetion()
+        self.inprogress_var.set('')
+        thread.join()
+
+        if thread.prerequisites_satisfied:
+            # add com numbers of connected boards
+            self.output.insert(ctk.END, "Looking for connected boards...")
+            self.load_boards()
+            last_char_position = self.output.index("end-1c")
+            last_line_start = self.output.index(f"{last_char_position} linestart")
+            self.output.delete(last_line_start, last_char_position)
 
     def prerequisites_check(self):
         # check if arduino-cli is installed
@@ -85,14 +100,14 @@ class Upload_window(ctk.CTkToplevel):
             self.output.insert(ctk.END, "✔ Arduino cli is installed ✔\n")
         else:
             self.output.insert(ctk.END, "✖ Arduino cli is NOT installed ✖\n")
-            return
+            return False
         
         # check if avr core is installed
         if self.is_arduino_avr_core_installed():
             self.output.insert(ctk.END, "✔ Arduino AVR core is installed ✔\n")
         else:
             self.output.insert(ctk.END, "✖ Arduino AVR core is NOT installed ✖\n")
-            return
+            return False
 
         # check if all the libraries are installed
         libs_check_results = check_arduino_library(self.lib_list)
@@ -103,10 +118,12 @@ class Upload_window(ctk.CTkToplevel):
                 libs_installed = False
             elif lib.version != self.lib_list[lib.name]:
                 self.output.insert(ctk.END, f'warning: \'{lib.name}\' version is recommended to be @{self.lib_list[lib.name]} (currently it is @{lib.version}). Sketch might not compile if the versions are not compatible\n')
-                libs_installed = False
         if libs_installed:
             self.output.insert(ctk.END, "✔ All needed arduino libraries are installed ✔\n")
+        else:
+            return False
             
+        return True
 
     def is_arduino_cli_installed(self):
         try:
