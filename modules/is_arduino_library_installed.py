@@ -9,7 +9,7 @@ class LibraryInfo:
         self.version = version
         self.latest = latest
 
-def check_arduino_library(library_names):
+def check_arduino_library(library_names, check_latest = False):
     '''Checks if specified arduino library(ies) is(are) installed and compiler sees it(them)
 
     Arguments: library_names -- iterable of names of the libraries to check || a single string containing library name
@@ -50,24 +50,23 @@ def check_arduino_library(library_names):
             results.append(LibraryInfo(library_name, False, None, None))
             continue
         
-        try:
-            # Get latest version
-            command = ['arduino-cli', 'lib', 'search', library_name, '--format', 'json']
-            search_latest_output = subprocess.check_output(command).decode('utf-8')
-            search_results = json.loads(search_latest_output)
+        if(check_latest):
+            try:
+                # Get latest version
+                command = ['arduino-cli', 'lib', 'search', library_name, '--format', 'json']
+                search_latest_output = subprocess.check_output(command).decode('utf-8')
+                search_results = json.loads(search_latest_output)
 
-            for result in search_results['libraries']:
-                if result['name'] == library_name:
-                    latest_version = result['latest']['version']
-                    break
+                for result in search_results['libraries']:
+                    if result['name'] == library_name:
+                        latest_version = result['latest']['version']
+                        break
 
-            results.append(LibraryInfo(library_name, True, installed_version, latest_version))
+            except (json.JSONDecodeError, KeyError) as e:
+                print(f"Error parsing JSON: {e}")
+                print(f"Command output: {search_latest_output}")
 
-        except (json.JSONDecodeError, KeyError) as e:
-            print(f"Error parsing JSON: {e}")
-            print(f"Command output: {search_latest_output}")
-            results.append(LibraryInfo(library_name, True, installed_version, None))
-
+        results.append(LibraryInfo(library_name, True, installed_version, latest_version))
 
     return tuple(results)
 
