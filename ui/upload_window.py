@@ -76,7 +76,24 @@ class Upload_window(ctk.CTkToplevel):
         self.upload_button.pack(pady=10)
         self.output.pack(expand=True, fill='both')
 
-        Timer(0.3, lambda:self.load_boards()).start()
+        # Timer(0.3, lambda:self.load_boards()).start()
+        Timer(0.3, lambda:self.prerequisites_check()).start()
+
+    def prerequisites_check(self):
+        # check if arduino-cli is installed
+        if self.is_arduino_cli_installed():
+            self.output.insert(ctk.END, "✔ Arduino cli is installed ✔\n")
+        else:
+            self.output.insert(ctk.END, "✖ Arduino cli is NOT installed ✖\n")
+            return
+
+
+    def is_arduino_cli_installed(self):
+        try:
+            subprocess.run(["arduino-cli"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            return True
+        except FileNotFoundError:
+            return False
 
     def update_fqbn(self, *args):
         if(self.board_var.get() == 'Arduino Nano (328)'):
