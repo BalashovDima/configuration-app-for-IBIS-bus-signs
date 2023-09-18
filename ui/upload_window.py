@@ -86,6 +86,13 @@ class Upload_window(ctk.CTkToplevel):
         else:
             self.output.insert(ctk.END, "✖ Arduino cli is NOT installed ✖\n")
             return
+        
+        # check if avr core is installed
+        if self.is_arduino_avr_core_installed():
+            self.output.insert(ctk.END, "✔ Arduino AVR core is installed ✔\n")
+        else:
+            self.output.insert(ctk.END, "✖ Arduino AVR core is NOT installed ✖\n")
+            return
 
 
     def is_arduino_cli_installed(self):
@@ -93,6 +100,15 @@ class Upload_window(ctk.CTkToplevel):
             subprocess.run(["arduino-cli"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
             return True
         except FileNotFoundError:
+            return False
+        
+    def is_arduino_avr_core_installed(self):
+        result = subprocess.run(["arduino-cli", "core", "list"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        
+        # Check if the result contains "arduino:avr" in the output
+        if "arduino:avr" in result.stdout:
+            return True
+        else:
             return False
 
     def update_fqbn(self, *args):
