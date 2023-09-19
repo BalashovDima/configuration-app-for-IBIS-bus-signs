@@ -6,6 +6,7 @@ import subprocess
 import customtkinter as ctk
 from modules.modify_n_upload import modify_n_upload
 from modules.is_arduino_library_installed import check_arduino_library
+from ui.install_missing_components_window import Install_missing_components_window
 
 class Upload_window(ctk.CTkToplevel):
     def __init__(self, parent, data, arduino_file):
@@ -78,7 +79,8 @@ class Upload_window(ctk.CTkToplevel):
         self.upload_button.pack(pady=10)
         self.output.pack(expand=True, fill='both')
 
-        self.install_missing_components_button = ctk.CTkButton(self, text='Install missing components')
+        self.install_missing_components_window = None
+        self.install_missing_components_button = ctk.CTkButton(self, text='Install missing components', command=self.install_missing_components)
         Timer(0.3, lambda:self.launch_prerequisites_check()).start()
 
     def launch_prerequisites_check(self):
@@ -90,6 +92,8 @@ class Upload_window(ctk.CTkToplevel):
         thread.join()
 
         if thread.missing_components:
+            self.missing_components = thread.missing_components
+
             x_coordinate = 520 - 10 - self.install_missing_components_button.winfo_reqwidth()
             y_coordinate = 370 - 10 - self.install_missing_components_button.winfo_reqheight()
 
@@ -101,6 +105,7 @@ class Upload_window(ctk.CTkToplevel):
         self.upload_button.configure(state='normal')
 
     def prerequisites_check(self):
+        self.output.delete(0.0, ctk.END)
         missing_components = {'cli': False, 'avr-core': False, 'libs': [], 'wrong-version-libs': []}
         # check if arduino-cli is installed
         if self.is_arduino_cli_installed():
@@ -137,6 +142,21 @@ class Upload_window(ctk.CTkToplevel):
             return missing_components
         
         return False
+    
+    def install_missing_components(self):
+        if self.install_missing_components_window is None or not self.install_missing_components_window.winfo_exists():
+            self.install_missing_components_window = Install_missing_components_window(self, self.missing_components) # create window if its None or destroyed
+
+            self.install_missing_components_window.protocol("WM_DELETE_WINDOW", self.close_inst_mis_comp_window)
+            self.install_missing_components_window.done_button.bind('<Button-1>', self.close_inst_mis_comp_window)
+            Timer(0.1, lambda:self.install_missing_components_window.focus()).start()
+        else:
+            self.install_missing_components_window.focus()  # if window exists focus it
+
+    def close_inst_mis_comp_window(self, event=None):
+        self.install_missing_components_window.destroy()
+        self.install_missing_components_button.place_forget()
+        self.launch_prerequisites_check()
 
     def is_arduino_cli_installed(self):
         try:
