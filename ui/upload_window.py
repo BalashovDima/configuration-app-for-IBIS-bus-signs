@@ -63,7 +63,7 @@ class Upload_window(ctk.CTkToplevel):
         self.reload_connected_boards_button.pack(side='left', padx=(5,0))
 
         # button
-        self.upload_button = ctk.CTkButton(self, text='Upload', command=self.upload)
+        self.upload_button = ctk.CTkButton(self, text='Upload', command=self.upload, state='disabled')
 
         # output
         self.output = ctk.CTkTextbox(self)
@@ -78,34 +78,43 @@ class Upload_window(ctk.CTkToplevel):
         self.upload_button.pack(pady=10)
         self.output.pack(expand=True, fill='both')
 
+        self.install_missing_components_button = ctk.CTkButton(self, text='Install missing components')
         Timer(0.3, lambda:self.launch_prerequisites_check()).start()
 
     def launch_prerequisites_check(self):
-        thread = threading.Thread(target=lambda: setattr(thread, 'prerequisites_satisfied', self.prerequisites_check()))
+        thread = threading.Thread(target=lambda: setattr(thread, 'missing_components', self.prerequisites_check()))
         thread.start()
         while thread.is_alive(): # display animetion while prerequisites are being checked
             self.loading_animetion()
         self.inprogress_var.set('')
         thread.join()
 
-        if thread.prerequisites_satisfied:
-            # add com numbers of connected boards
-            self.load_boards()
+        if thread.missing_components:
+            x_coordinate = 520 - 10 - self.install_missing_components_button.winfo_reqwidth()
+            y_coordinate = 370 - 10 - self.install_missing_components_button.winfo_reqheight()
+
+            self.install_missing_components_button.place(x=x_coordinate, y=y_coordinate)
+            return
+
+        # add com numbers of connected boards
+        self.load_boards()
+        self.upload_button.configure(state='normal')
 
     def prerequisites_check(self):
+        missing_components = {'cli': False, 'avr-core': False, 'libs': [], 'wrong-version-libs': []}
         # check if arduino-cli is installed
         if self.is_arduino_cli_installed():
             self.output.insert(ctk.END, "✔ Arduino cli is installed ✔\n")
         else:
             self.output.insert(ctk.END, "✖ Arduino cli is NOT installed ✖\n")
-            return False
+            missing_components['cli'] = True
         
         # check if avr core is installed
         if self.is_arduino_avr_core_installed():
             self.output.insert(ctk.END, "✔ Arduino AVR core is installed ✔\n")
         else:
             self.output.insert(ctk.END, "✖ Arduino AVR core is NOT installed ✖\n")
-            return False
+            missing_components['avr-core'] = True
 
         # check if all the libraries are installed
         libs_check_results = check_arduino_library(self.lib_list)
@@ -114,14 +123,20 @@ class Upload_window(ctk.CTkToplevel):
             if not lib.installed:
                 self.output.insert(ctk.END, f'✖ Library \'{lib.name}\' is not installed ✖\n')
                 libs_installed = False
+                missing_components['libs'].append({'name': lib.name, 'version': self.lib_list[lib.name]})
             elif lib.version != self.lib_list[lib.name]:
                 self.output.insert(ctk.END, f'warning: \'{lib.name}\' version is recommended to be @{self.lib_list[lib.name]} (currently it is @{lib.version}). Sketch might not compile if the versions are not compatible\n')
+                missing_components['wrong-version-libs'].append({'name': lib.name, 'version': self.lib_list[lib.name]})
         if libs_installed:
             self.output.insert(ctk.END, "✔ All needed arduino libraries are installed ✔\n")
-        else:
-            return False
             
-        return True
+        if(missing_components['cli'] 
+           or missing_components['avr-core']
+           or len(missing_components['libs'])
+           or len(missing_components['wrong-version-libs'])): 
+            return missing_components
+        
+        return False
 
     def is_arduino_cli_installed(self):
         try:
