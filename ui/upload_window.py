@@ -57,8 +57,10 @@ class Upload_window(ctk.CTkToplevel):
         self.com_frame = ctk.CTkFrame(self)
         self.com_label = ctk.CTkLabel(self.com_frame, text='COM port:')
         self.com_combobox = ctk.CTkComboBox(self.com_frame, variable=self.com_var, values=(''))
+        self.reload_connected_boards_button = ctk.CTkButton(self.com_frame, text='⟳', font=('Calibri', 20), command=self.load_boards, width=15)
         self.com_label.pack(side='left', padx=5)
         self.com_combobox.pack(side='left')
+        self.reload_connected_boards_button.pack(side='left', padx=(5,0))
 
         # button
         self.upload_button = ctk.CTkButton(self, text='Upload', command=self.upload)
@@ -88,11 +90,7 @@ class Upload_window(ctk.CTkToplevel):
 
         if thread.prerequisites_satisfied:
             # add com numbers of connected boards
-            self.output.insert(ctk.END, "Looking for connected boards...")
             self.load_boards()
-            last_char_position = self.output.index("end-1c")
-            last_line_start = self.output.index(f"{last_char_position} linestart")
-            self.output.delete(last_line_start, last_char_position)
 
     def prerequisites_check(self):
         # check if arduino-cli is installed
@@ -173,6 +171,8 @@ class Upload_window(ctk.CTkToplevel):
             return []
     
     def load_boards(self):
+        self.output.insert(ctk.END, "Looking for connected boards...")
+
         boards_thread = threading.Thread(target=lambda: setattr(boards_thread, 'result', self.get_connected_arduino_boards()))
         boards_thread.start()
 
@@ -182,9 +182,16 @@ class Upload_window(ctk.CTkToplevel):
         
         boards_thread.join()
 
+        self.com_combobox.configure(values=boards_thread.result)
         if len(boards_thread.result):
-            self.com_combobox.configure(values=boards_thread.result)
             self.com_var.set(boards_thread.result[0])
+        else:
+            self.com_var.set('')
+
+        # remove 'Looking for connected boards...' from output textbox
+        last_char_position = self.output.index("end-1c")
+        last_line_start = self.output.index(f"{last_char_position} linestart")
+        self.output.delete(last_line_start, last_char_position)
 
     def com_check(self, com):
         '''Checks whether 'com' is valid
