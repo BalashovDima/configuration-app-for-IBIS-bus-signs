@@ -94,8 +94,8 @@ class Upload_window(ctk.CTkToplevel):
         if thread.missing_components:
             self.missing_components = thread.missing_components
 
-            x_coordinate = 520 - 10 - self.install_missing_components_button.winfo_reqwidth()
-            y_coordinate = 370 - 10 - self.install_missing_components_button.winfo_reqheight()
+            x_coordinate = self.winfo_width() - 10 - self.install_missing_components_button.winfo_reqwidth()
+            y_coordinate = self.winfo_height() - 10 - self.install_missing_components_button.winfo_reqheight()
 
             self.install_missing_components_button.place(x=x_coordinate, y=y_coordinate)
             return
@@ -146,10 +146,25 @@ class Upload_window(ctk.CTkToplevel):
     def install_missing_components(self):
         if self.install_missing_components_window is None or not self.install_missing_components_window.winfo_exists():
             self.install_missing_components_window = Install_missing_components_window(self, self.missing_components) # create window if its None or destroyed
+        # for ui rendering test ↓↓↓↓↓
+            # self.install_missing_components_window = Install_missing_components_window(self, {'cli': True, 
+            #               'avr-core': True, 
+            #               'libs': [
+            #                   {'name': 'some-library', 'version': '1.2.3'},
+            #                   {'name': 'test-not-existent', 'version': '3.4.1'},
+            #                   {'name': 'don\'t-know', 'version': '3.4.1'},
+            #                   {'name': 'another', 'version': '1.1.1'}
+            #                   ], 
+            #               'wrong-version-libs': [
+            #                   {'name': 'wrong-version-library', 'version': '12.3.1'},
+            #                   {'name': 'EncButton', 'version': '3.1.0'},
+            #                   {'name': 'something', 'version': '2.3.1'}
+            #                   ]}) 
+        # for ui rendering test ^^^^^
 
             self.install_missing_components_window.protocol("WM_DELETE_WINDOW", self.close_inst_mis_comp_window)
             self.install_missing_components_window.done_button.bind('<Button-1>', self.close_inst_mis_comp_window)
-            Timer(0.1, lambda:self.install_missing_components_window.focus()).start()
+            Timer(0.3, lambda:self.install_missing_components_window.focus()).start()
         else:
             self.install_missing_components_window.focus()  # if window exists focus it
 
