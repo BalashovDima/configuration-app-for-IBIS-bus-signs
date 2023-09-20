@@ -113,6 +113,7 @@ class Upload_window(ctk.CTkToplevel):
         else:
             self.output.insert(ctk.END, "✖ Arduino cli is NOT installed ✖\n")
             missing_components['cli'] = True
+            return missing_components
         
         # check if avr core is installed
         if self.is_arduino_avr_core_installed():
