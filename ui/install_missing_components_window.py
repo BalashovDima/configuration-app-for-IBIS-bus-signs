@@ -71,7 +71,7 @@ class Install_missing_components_window(ctk.CTkToplevel):
             remove_from_components = []
             for i, component in enumerate(self.missing_components_widgets):
                 if component.component_type == 'arduino-cli':
-                    if component.checkbox_vars[0]:
+                    if component.checkbox_vars[0].get():
                         self.output.insert('end', 'Installing arduino-cli...\n')
                         installation_result, output_text = install_arduino_cli(os.getcwd())
                         self.output.insert('end', output_text+'\n')
@@ -91,7 +91,19 @@ class Install_missing_components_window(ctk.CTkToplevel):
                             remove_from_components.append(i)
 
                 if component.component_type == 'avr-core':
-                    pass
+                    if component.checkbox_vars[0].get():
+                        self.output.insert('end', 'Installing arduino AVR core...\n Confirm installation of drivers when you are prompted to.\n')
+                        try:
+                            avr_core_installation_result = subprocess.run("arduino-cli core install arduino:avr", stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+                            self.output.insert('end', avr_core_installation_result.stdout+'\n')
+                            print(avr_core_installation_result.stdout)
+                            component.destroy()
+                            remove_from_components.append(i)
+                        except subprocess.CalledProcessError as e:
+                            self.output.insert('end', e.stderr+'')
+                            self.output.insert('end', str(e)+'\n')
+                            print(e.stderr)
+                            print(e)
                 if component.component_type == 'libs':
                     pass
                 if component.component_type == 'wrong-version-libs':
