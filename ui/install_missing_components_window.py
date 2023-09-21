@@ -69,7 +69,9 @@ class Install_missing_components_window(ctk.CTkToplevel):
             self.install_button.configure(state="disabled")
 
             remove_from_components = []
+            # for each section (cli, core, libs, wrong libs)
             for i, component in enumerate(self.missing_components_widgets):
+                # CLI
                 if component.component_type == 'arduino-cli':
                     if component.checkbox_vars[0].get():
                         self.output.insert('end', 'Installing arduino-cli...\n')
@@ -89,7 +91,7 @@ class Install_missing_components_window(ctk.CTkToplevel):
 
                             component.destroy()
                             remove_from_components.append(i)
-
+                # CORE
                 if component.component_type == 'avr-core':
                     if component.checkbox_vars[0].get():
                         self.output.insert('end', 'Installing arduino AVR core...\n Confirm installation of drivers when you are prompted to.\n')
@@ -104,11 +106,41 @@ class Install_missing_components_window(ctk.CTkToplevel):
                             self.output.insert('end', str(e)+'\n')
                             print(e.stderr)
                             print(e)
-                if component.component_type == 'libs':
-                    pass
-                if component.component_type == 'wrong-version-libs':
-                    pass
+                # LIBS and WRONG LIBS
+                if component.component_type == 'libs' or component.component_type == 'wrong-version-libs':
+                    successfully_installed = []
+                    # for each checkbox (each library)
+                    for lib_i, checkbox_var in enumerate(component.checkbox_vars):
+                        # if library checked, then install it
+                        if checkbox_var.get(): 
+                            try:
+                                lib_installation_output = subprocess.run(f'arduino-cli lib install "{component.checkbox_texts[lib_i]}"', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
+                                self.output.insert('end', lib_installation_output.stdout+'\n')
+                                print(lib_installation_output.stdout)
+                                # mark this library as successfully installed (to then remove it from the list of the ones that need to be installed)
+                                successfully_installed.append(lib_i)
+                            except subprocess.CalledProcessError as e:
+                                self.output.insert('end', e.stderr+'')
+                                self.output.insert('end', str(e)+'\n')
+                                print(e.stderr)
+                                print(e)
 
+
+                    # remove successfully installed libraries from the list of options
+                    successfully_installed.reverse()
+                    for lib in successfully_installed:
+                        component.checkbox_list[lib].destroy()
+                        component.checkbox_list.pop(lib)
+                        component.checkbox_texts.pop(lib)
+                        component.checkbox_vars.pop(lib)
+                    
+                    # if all libraries were installed then remove (and add to remove list) the sections with libraries
+                    if not len(component.checkbox_list):
+                        component.destroy()
+                        remove_from_components.append(i)
+            
+
+            # remove from the list of sections the ones that were installed
             for i in remove_from_components:
                 self.missing_components_widgets.pop(i)
                 
@@ -152,6 +184,7 @@ class Component(ctk.CTkFrame):
 
         self.checkbox_texts = checkbox_items
         self.checkbox_vars = []
+        self.checkbox_list = []
 
         self.label = ctk.CTkLabel(self, text=label_text, font=('Calibri', 18))
         self.label.pack(anchor='w')
@@ -160,9 +193,11 @@ class Component(ctk.CTkFrame):
         self.checkbox_frame.pack(expand=True, padx=(20,0), fill='x')
         for i, checkbox_item in enumerate(self.checkbox_texts):
             state_var = ctk.BooleanVar(value=True)
+            if self.component_type == 'wrong-version-libs': state_var.set(False)
             checkbox = ctk.CTkCheckBox(self.checkbox_frame, text=checkbox_item, variable=state_var)
             # add padding on top for each checkbox starting from second (index 1+)
             if i: checkbox.pack(anchor='w', pady=(5,0))
             else: checkbox.pack(anchor='w')
 
             self.checkbox_vars.append(state_var)
+            self.checkbox_list.append(checkbox)

@@ -25,10 +25,11 @@ class Upload_window(ctk.CTkToplevel):
 
         self.lib_list = {'LiquidCrystal': '1.0.7', 
                          'RTClib': '2.1.1', 
-                         'Adafruit BusIO': '1.14.1', 
-                         'Wire': '1.0', 
                          'AnalogKey': '1.1', 
                          'EncButton': '2.0', 
+                        # libraries below are installed automatically (adafruit busio with rtclib, other three are a part of arduino:avr core)
+                         'Adafruit BusIO': '1.14.1', 
+                         'Wire': '1.0', 
                          'EEPROM': '2.0', 
                          'SPI': '1.0',
                          }
@@ -98,6 +99,10 @@ class Upload_window(ctk.CTkToplevel):
             y_coordinate = self.winfo_height() - 10 - self.install_missing_components_button.winfo_reqheight()
 
             self.install_missing_components_button.place(x=x_coordinate, y=y_coordinate)
+
+            # allow upload if the only thing missing is a library (or libraries) of wrong version
+            if not self.missing_components['cli'] and not self.missing_components['avr-core'] and not len(self.missing_components['libs']):
+                self.upload_button.configure(state='normal')
             return
 
         # add com numbers of connected boards
