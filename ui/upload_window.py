@@ -180,11 +180,16 @@ class Upload_window(ctk.CTkToplevel):
         self.launch_prerequisites_check()
 
     def is_arduino_cli_installed(self):
-        try:
-            process = subprocess.Popen(["arduino-cli"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            stdout, stderr = process.communicate()
+        process = subprocess.Popen(["arduino-cli"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+
+        if process.returncode != 0:
+            return False
+    
+        # Check if the output contains version information (or other indicators of success)
+        if b"Arduino CLI" in stdout:
             return True
-        except FileNotFoundError:
+        else:
             return False
         
     def is_arduino_avr_core_installed(self):
