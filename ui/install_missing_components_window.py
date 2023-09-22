@@ -80,12 +80,21 @@ class Install_missing_components_window(ctk.CTkToplevel):
 
                         if installation_result:
                             try:
-                                config_init_result = subprocess.run("arduino-cli config init", stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-                                self.output.insert('end', config_init_result.stdout+'\n')
-                                print(config_init_result.stdout)
+                                process = subprocess.Popen("arduino-cli config init", shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                                stdout, stderr = process.communicate()
+
+                                if process.returncode == 0:
+                                    self.output.insert('end', stdout + '\n')
+                                    print(stdout)
+                                else:
+                                    self.output.insert('end', stderr)
+                                    self.output.insert('end', str(process.returncode) + '\n')
+                                    print(stderr)
+                                    print(process.returncode)
+
                             except subprocess.CalledProcessError as e:
-                                self.output.insert('end', e.stderr+'')
-                                self.output.insert('end', str(e)+'\n')
+                                self.output.insert('end', e.stderr + '')
+                                self.output.insert('end', str(e) + '\n')
                                 print(e.stderr)
                                 print(e)
 
@@ -96,16 +105,26 @@ class Install_missing_components_window(ctk.CTkToplevel):
                     if component.checkbox_vars[0].get():
                         self.output.insert('end', 'Installing arduino AVR core...\n Confirm installation of drivers when you are prompted to.\n')
                         try:
-                            avr_core_installation_result = subprocess.run("arduino-cli core install arduino:avr", stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-                            self.output.insert('end', avr_core_installation_result.stdout+'\n')
-                            print(avr_core_installation_result.stdout)
-                            component.destroy()
-                            remove_from_components.append(i)
+                            process = subprocess.Popen("arduino-cli core install arduino:avr", shell=True,  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                            stdout, stderr = process.communicate()
+
+                            if process.returncode == 0:
+                                self.output.insert('end', stdout + '\n')
+                                print(stdout)
+                                component.destroy()
+                                remove_from_components.append(i)
+                            else:
+                                self.output.insert('end', stderr)
+                                self.output.insert('end', str(process.returncode) + '\n')
+                                print(stderr)
+                                print(process.returncode)
+
                         except subprocess.CalledProcessError as e:
-                            self.output.insert('end', e.stderr+'')
-                            self.output.insert('end', str(e)+'\n')
+                            self.output.insert('end', e.stderr + '')
+                            self.output.insert('end', str(e) + '\n')
                             print(e.stderr)
                             print(e)
+
                 # LIBS and WRONG LIBS
                 if component.component_type == 'libs' or component.component_type == 'wrong-version-libs':
                     successfully_installed = []
@@ -114,14 +133,23 @@ class Install_missing_components_window(ctk.CTkToplevel):
                         # if library checked, then install it
                         if checkbox_var.get(): 
                             try:
-                                lib_installation_output = subprocess.run(f'arduino-cli lib install "{component.checkbox_texts[lib_i]}"', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, check=True)
-                                self.output.insert('end', lib_installation_output.stdout+'\n')
-                                print(lib_installation_output.stdout)
-                                # mark this library as successfully installed (to then remove it from the list of the ones that need to be installed)
-                                successfully_installed.append(lib_i)
+                                process = subprocess.Popen(f'arduino-cli lib install "{component.checkbox_texts[lib_i]}"', shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+                                stdout, stderr = process.communicate()
+
+                                if process.returncode == 0:
+                                    self.output.insert('end', stdout + '\n')
+                                    print(stdout)
+                                    # mark this library as successfully installed (to then remove it from the list of the ones that need to be installed)
+                                    successfully_installed.append(lib_i)
+                                else:
+                                    self.output.insert('end', stderr)
+                                    self.output.insert('end', str(process.returncode) + '\n')
+                                    print(stderr)
+                                    print(process.returncode)
+
                             except subprocess.CalledProcessError as e:
-                                self.output.insert('end', e.stderr+'')
-                                self.output.insert('end', str(e)+'\n')
+                                self.output.insert('end', e.stderr + '')
+                                self.output.insert('end', str(e) + '\n')
                                 print(e.stderr)
                                 print(e)
 

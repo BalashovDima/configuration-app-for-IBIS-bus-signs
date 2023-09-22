@@ -28,12 +28,14 @@ def check_arduino_library(library_names, check_latest=False):
         if process.returncode != 0:
             print(f"Error executing command: {' '.join(command)}")
             print(f"Command output: {error}")
-            results.append(LibraryInfo(library_name, False, None, None))
+            for library_name in library_names:
+                results.append(LibraryInfo(library_name, False, None, None))
 
     except subprocess.CalledProcessError as e:
         print(f"Error executing command: {e.cmd}")
         print(f"Command output: {e.output.decode('utf-8')}")
-        results.append(LibraryInfo(library_name, False, None, None))
+        for library_name in library_names:
+            results.append(LibraryInfo(library_name, False, None, None))
 
     # loop through all the libraries given
     for library_name in library_names:
