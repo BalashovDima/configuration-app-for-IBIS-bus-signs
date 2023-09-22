@@ -87,7 +87,7 @@ class Upload_window(ctk.CTkToplevel):
     def launch_prerequisites_check(self):
         thread = threading.Thread(target=lambda: setattr(thread, 'missing_components', self.prerequisites_check()))
         thread.start()
-        while thread.is_alive(): # display animetion while prerequisites are being checked
+        while not hasattr(thread, 'missing_components'): # display animetion while prerequisites are being checked
             self.loading_animetion()
         self.inprogress_var.set('')
         thread.join()
@@ -181,18 +181,21 @@ class Upload_window(ctk.CTkToplevel):
 
     def is_arduino_cli_installed(self):
         try:
-            subprocess.run(["arduino-cli"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True)
+            process = subprocess.Popen(["arduino-cli"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            stdout, stderr = process.communicate()
             return True
         except FileNotFoundError:
             return False
         
     def is_arduino_avr_core_installed(self):
-        result = subprocess.run(["arduino-cli", "core", "list"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-        
-        # Check if the result contains "arduino:avr" in the output
-        if "arduino:avr" in result.stdout:
-            return True
-        else:
+        try:
+            process = subprocess.Popen(["arduino-cli", "core", "list"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
+            if "arduino:avr" in stdout:
+                return True
+            else:
+                return False
+        except FileNotFoundError:
             return False
 
     def update_fqbn(self, *args):
@@ -206,24 +209,21 @@ class Upload_window(ctk.CTkToplevel):
     def get_connected_arduino_boards(self):
         try:
             # Run the arduino-cli board list command
-            result = subprocess.run(["arduino-cli", "board", "list"], capture_output=True, text=True, check=True)
+            process = subprocess.Popen(["arduino-cli", "board", "list"], shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            stdout, stderr = process.communicate()
+            process.wait()  # Wait for the process to finish
 
             # Parse the output to extract the board information
             board_list = []
-            lines = result.stdout.splitlines()
+            lines = stdout.splitlines()
             for line in lines[1:]:  # Skip the header line
                 parts = line.split()
                 if len(parts) >= 3:
                     port = parts[0]
-                    # board_type = parts[2]
-                    # board_name = " ".join(parts[3:])
                     board_list.append(port)
 
             return board_list
-
-        except subprocess.CalledProcessError as e:
-            print('Error running arduino-cli to load connected boards:', e)
-            self.output.insert(ctk.END, f'Error loading connected boards: {e}')
+        except FileNotFoundError:
             return []
     
     def load_boards(self):

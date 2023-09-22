@@ -9,7 +9,7 @@ class LibraryInfo:
         self.version = version
         self.latest = latest
 
-def check_arduino_library(library_names, check_latest = False):
+def check_arduino_library(library_names, check_latest=False):
     '''Checks if specified arduino library(ies) is(are) installed and compiler sees it(them)
 
     Arguments: library_names -- iterable of names of the libraries to check || a single string containing library name
@@ -22,7 +22,14 @@ def check_arduino_library(library_names, check_latest = False):
 
     try:
         command = ['arduino-cli', 'lib', 'list', '--all']
-        output = subprocess.check_output(command).decode('utf-8')
+        process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+        output, error = process.communicate()
+
+        if process.returncode != 0:
+            print(f"Error executing command: {' '.join(command)}")
+            print(f"Command output: {error}")
+            results.append(LibraryInfo(library_name, False, None, None))
+
     except subprocess.CalledProcessError as e:
         print(f"Error executing command: {e.cmd}")
         print(f"Command output: {e.output.decode('utf-8')}")
@@ -54,13 +61,19 @@ def check_arduino_library(library_names, check_latest = False):
             try:
                 # Get latest version
                 command = ['arduino-cli', 'lib', 'search', library_name, '--format', 'json']
-                search_latest_output = subprocess.check_output(command).decode('utf-8')
-                search_results = json.loads(search_latest_output)
+                process = subprocess.Popen(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                search_latest_output, error = process.communicate()
 
-                for result in search_results['libraries']:
-                    if result['name'] == library_name:
-                        latest_version = result['latest']['version']
-                        break
+                if process.returncode == 0:
+                    search_results = json.loads(search_latest_output)
+
+                    for result in search_results['libraries']:
+                        if result['name'] == library_name:
+                            latest_version = result['latest']['version']
+                            break
+                else:
+                    print(f"Error executing command: {' '.join(command)}")
+                    print(f"Command output: {error}")
 
             except (json.JSONDecodeError, KeyError) as e:
                 print(f"Error parsing JSON: {e}")
